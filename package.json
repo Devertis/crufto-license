@@ -1,0 +1,17 @@
+{
+  "name": "crufto-license",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Crufto license service: Stripe webhook -> signed Ed25519 license key -> email.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.16",
+    "stripe": "^17.4.0"
+  }
+}

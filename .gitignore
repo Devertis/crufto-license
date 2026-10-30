@@ -1,0 +1,8 @@
+node_modules/
+*.pem
+*.key
+.env
+.env.*
+!.env.example
+data/
+*.log
