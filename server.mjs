@@ -24,15 +24,23 @@ const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 const PRODUCT = process.env.PRODUCT || 'cleaner';
 const PRODUCT_LABEL = process.env.PRODUCT_LABEL || 'Crufto Cleaner';
 
-// The Ed25519 signing key is a PKCS8 PEM. To avoid env-var newline/quoting
-// mangling, it is supplied single-line as base64 of the PEM in
-// LICENSE_SIGNING_KEY_B64 (preferred). LICENSE_SIGNING_KEY (raw or \n-escaped
-// PEM) is still accepted as a fallback.
+// The Ed25519 signing key is a PKCS8 PEM, supplied as base64 of the PEM. Some
+// env backends (e.g. Coolify behind a proxy) silently drop long values, so the
+// key may be split into short numbered chunks that are concatenated here:
+//   LICENSE_SIGNING_KEY_B64_0, LICENSE_SIGNING_KEY_B64_1, ...   (in order)
+// Also accepted: the whole thing in LICENSE_SIGNING_KEY_B64, or a raw/escaped
+// PEM in LICENSE_SIGNING_KEY.
 function loadSigningKey() {
   let pem = '';
-  const b64 = process.env.LICENSE_SIGNING_KEY_B64 || '';
+  let b64 = '';
+  for (let i = 0; ; i++) {
+    const part = process.env[`LICENSE_SIGNING_KEY_B64_${i}`];
+    if (part === undefined) break;
+    b64 += part.trim();
+  }
+  if (!b64) b64 = (process.env.LICENSE_SIGNING_KEY_B64 || '').trim();
   if (b64) {
-    pem = Buffer.from(b64.trim(), 'base64').toString('utf8');
+    pem = Buffer.from(b64, 'base64').toString('utf8');
   } else {
     pem = process.env.LICENSE_SIGNING_KEY || '';
     if (pem && !pem.includes('\n') && pem.includes('\\n')) pem = pem.replace(/\\n/g, '\n');
