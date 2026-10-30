@@ -24,15 +24,24 @@ const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 const PRODUCT = process.env.PRODUCT || 'cleaner';
 const PRODUCT_LABEL = process.env.PRODUCT_LABEL || 'Crufto Cleaner';
 
-// The signing key is PKCS8 PEM. Coolify env may deliver newlines escaped as \n.
+// The Ed25519 signing key is a PKCS8 PEM. To avoid env-var newline/quoting
+// mangling, it is supplied single-line as base64 of the PEM in
+// LICENSE_SIGNING_KEY_B64 (preferred). LICENSE_SIGNING_KEY (raw or \n-escaped
+// PEM) is still accepted as a fallback.
 function loadSigningKey() {
-  let pem = process.env.LICENSE_SIGNING_KEY || '';
+  let pem = '';
+  const b64 = process.env.LICENSE_SIGNING_KEY_B64 || '';
+  if (b64) {
+    pem = Buffer.from(b64.trim(), 'base64').toString('utf8');
+  } else {
+    pem = process.env.LICENSE_SIGNING_KEY || '';
+    if (pem && !pem.includes('\n') && pem.includes('\\n')) pem = pem.replace(/\\n/g, '\n');
+  }
   if (!pem) return null;
-  if (!pem.includes('\n') && pem.includes('\\n')) pem = pem.replace(/\\n/g, '\n');
   try {
     return crypto.createPrivateKey(pem);
   } catch (err) {
-    console.error('[fatal] LICENSE_SIGNING_KEY is not a valid private key:', err.message);
+    console.error('[fatal] signing key is not a valid private key:', err.message);
     return null;
   }
 }
